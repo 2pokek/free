@@ -3,6 +3,7 @@ import csv
 from datetime import datetime
 from bs4 import BeautifulSoup
 from proxy_config import login, password, proxy
+
 requests.packages.urllib3.disable_warnings()
 
 headers = {
@@ -17,8 +18,11 @@ proxies = {
 
 def get_data(url):
     cur_date = datetime.now().strftime('%m_%d_%Y')
-    # response = requests.get(url=url, headers=headers, proxies=proxies)
-    # print(response)
+    response = requests.get(url=url, headers=headers, proxies=proxies)
+    print(response)
+
+    with open(file='index.html', mode='w') as file:
+        file.write(response.text)
 
     with open(file='index.html') as file:
         src = file.read()
@@ -31,7 +35,6 @@ def get_data(url):
     table_headers = ['Area']
     for dth in data_th:
         dth = dth.text.strip()
-        # print(dth)
         table_headers.append(dth)
 
     with open(file=f'data_{cur_date}.csv', mode='w') as file:
@@ -45,13 +48,12 @@ def get_data(url):
 
     tbody_trs = table.find('tbody').find_all('tr')
 
+    ids = []
     data = []
     for tr in tbody_trs:
         area = tr.find('th').text.strip()
 
         data_by_month = tr.find_all('td')
-
-        ids = []
         data = [area]
         for dbm in data_by_month:
             if dbm.find('a'):
@@ -74,17 +76,18 @@ def get_data(url):
                 )
             )
 
-    with open(file='ids.txt',mode='w') as file:
+    with open(file='ids.txt', mode='w') as file:
         for id in ids:
             file.write(f'{id}\n')
-    return 'Done'
+
+    return 'Work done!'
 
 
-def download_xslx(file_path='ids.txt'):
+def download_xlsx(file_path='ids.txt'):
     with open(file=file_path) as file:
         ids = [line.strip() for line in file.readlines()]
 
-    for i , id in enumerate(ids):
+    for i, id in enumerate(ids):
         headers = {
             'Host': 'data.bls.gov',
             'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:97.0) Gecko/20100101 Firefox/97.0',
@@ -105,17 +108,18 @@ def download_xslx(file_path='ids.txt'):
 
         data = f'request_action=get_data&reformat=true&from_results_page=true&years_option=specific_years&delimiter=comma&output_type=multi&periods_option=all_periods&output_view=data&output_format=excelTable&original_output_type=default&annualAveragesRequested=false&series_id={id}'
 
-        response = requests.post('https://data.bls.gov/pdq/SurveyOutputServlet', headers=headers, data=data, verify=False)
+        response = requests.post('https://data.bls.gov/pdq/SurveyOutputServlet', headers=headers, data=data,
+                                 verify=False, proxies=proxies)
 
-    with open(file='text.xlsx', mode='wb') as file:
-        file.write(response.content)
+        with open(file=f'xlsx_files/{id}.xlsx', mode='wb') as file:
+            file.write(response.content)
 
-    print(f'{i + 1}/{len(ids)}')
+        print(f'{i + 1}/{len(ids)}')
 
 
 def main():
     # print(get_data(url='https://www.bls.gov/regions/midwest/data/AverageEnergyPrices_SelectedAreas_Table.htm'))
-    download_xslx()
+    download_xlsx()
 
 
 if __name__ == '__main__':
