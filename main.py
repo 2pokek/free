@@ -99,8 +99,8 @@ def download_xslx():
         file.write(response.content)
 
 def main():
-    print(get_data(url='https://www.bls.gov/regions/midwest/data/AverageEnergyPrices_SelectedAreas_Table.htm'))
-
+    # print(get_data(url='https://www.bls.gov/regions/midwest/data/AverageEnergyPrices_SelectedAreas_Table.htm'))
+    download_xslx()
 
 if __name__ == '__main__':
     main()
